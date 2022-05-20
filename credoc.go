@@ -71,15 +71,24 @@ func credocfil(inpfilnam string)(err error) {
 	outfil.WriteString(outstr)
 
 	bufp := buf[:]
-	n, err := inpfil.Read(bufp)
+
 	linSt := 0
-	for i:=0; i< n; i++ {
-		if bufp[i] == '\n' {
-			linSt = i
-			break
+	ilin := 1
+	for iblock :=0; iblock < 10; iblock++ {
+		offset := int64(iblock * 4096)
+		nb, _ := inpfil.ReadAt(bufp, offset)
+//		if err != nil {return fmt.Errorf("read: %d %v", nb, err)}
+		for i:=0; i< nb; i++ {
+			if bufp[i] == '\n' {
+				linEnd := i
+				fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
+				ilin++
+				linSt = i+1
+			}
 		}
+		if nb < 4096 {break}
 	}
-	fmt.Printf("line 1: %s\n", string(bufp[:linSt]))
+
 	outfil.WriteString(string(bufp[:linSt]))
 
 	return nil
