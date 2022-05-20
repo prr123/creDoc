@@ -67,8 +67,10 @@ func credocfil(inpfilnam string)(err error) {
 	if err != nil { return fmt.Errorf("os.Create: %v\n", err)}
 	defer outfil.Close()
 
-	outstr:= fmt.Sprintf("%s\n", outfilnam)
-	outfil.WriteString(outstr)
+	prefix := "<p style=\"font-size:18pt; text-align:center;\">"
+	suffix := "</p>\n\n"
+
+	outfil.WriteString(prefix + outfilnam + suffix)
 
 	bufp := buf[:]
 
@@ -78,10 +80,20 @@ func credocfil(inpfilnam string)(err error) {
 		offset := int64(iblock * 4096)
 		nb, _ := inpfil.ReadAt(bufp, offset)
 //		if err != nil {return fmt.Errorf("read: %d %v", nb, err)}
+		introlin := 0
 		for i:=0; i< nb; i++ {
 			if bufp[i] == '\n' {
 				linEnd := i
 				fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
+//				fmt.Println("start: ", string(bufp[linSt:linSt+1]))
+				if (bufp[linSt] == '/') && (bufp[linSt+1] == '/') {
+					outfil.WriteString("  " + string(bufp[linSt+2: linEnd]) + "   \n")
+					introlin = ilin
+				}
+				if (introlin >0) && (introlin < ilin) {
+					outfil.WriteString("/n/n")
+					break
+				}
 				ilin++
 				linSt = i+1
 			}
@@ -89,7 +101,6 @@ func credocfil(inpfilnam string)(err error) {
 		if nb < 4096 {break}
 	}
 
-	outfil.WriteString(string(bufp[:linSt]))
 
 	return nil
 }
