@@ -45,6 +45,7 @@ func credocfil(inpfilnam string)(err error) {
 // function that creates doc output file
 
 	var outfilnam string
+	var buf [4096]byte
 	// check whether input file is valid
 	inpfil, err := os.Open(os.Args[1])
 	defer inpfil.Close()
@@ -68,6 +69,18 @@ func credocfil(inpfilnam string)(err error) {
 
 	outstr:= fmt.Sprintf("%s\n", outfilnam)
 	outfil.WriteString(outstr)
+
+	bufp := buf[:]
+	n, err := inpfil.Read(bufp)
+	linSt := 0
+	for i:=0; i< n; i++ {
+		if bufp[i] == '\n' {
+			linSt = i
+			break
+		}
+	}
+	fmt.Printf("line 1: %s\n", string(bufp[:linSt]))
+	outfil.WriteString(string(bufp[:linSt]))
 
 	return nil
 }
