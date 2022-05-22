@@ -38,7 +38,7 @@ func main() {
 		fmt.Printf("error - credocfil: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("success")
+	fmt.Println("*** success ***")
 }
 
 func credocfil(inpfilnam string)(err error) {
@@ -52,7 +52,8 @@ func credocfil(inpfilnam string)(err error) {
 
 	inpfilInfo,_ := inpfil.Stat()
 	inpSize := inpfilInfo.Size()
-	fmt.Printf("input file size: %d\n", inpSize)
+
+	fmt.Printf("*** input file:  %s Size: %d\n", inpfilnam, inpSize)
 
 	// create output file name
 //	found := false
@@ -64,7 +65,7 @@ func credocfil(inpfilnam string)(err error) {
 		}
 	}
 
-	fmt.Printf("output file: %s\n", outfilnam)
+	fmt.Printf("*** output file: %s\n", outfilnam + ".md")
 
 	outfil, err := os.Create(outfilnam + ".md")
 	if err != nil { return fmt.Errorf("os.Create: %v\n", err)}
@@ -82,12 +83,13 @@ func credocfil(inpfilnam string)(err error) {
 //	for iblock :=0; iblock < 10; iblock++ {
 	nb, _ := inpfil.Read(bufp)
 //		if err != nil {return fmt.Errorf("read: %d %v", nb, err)}
+
+	// top comments
 	introlin := 0
 	for i:=0; i< nb; i++ {
 		if bufp[i] == '\n' {
 			linEnd := i
-			fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
-//				fmt.Println("start: ", string(bufp[linSt:linSt+1]))
+//			fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
 			if (bufp[linSt] == '/') && (bufp[linSt+1] == '/') {
 				outfil.WriteString("  " + string(bufp[linSt+2: linEnd]) + "   \n")
 				introlin = ilin
@@ -100,6 +102,14 @@ func credocfil(inpfilnam string)(err error) {
 			linSt = i+1
 		}
 	}
+
+	//type definitions
+
+	outfil.WriteString("+Types\n\n")
+
+	outfil.WriteString("+Functions\n\n")
+
+	outfil.WriteString("+Methods\n\n")
 
 	return nil
 }
