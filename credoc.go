@@ -106,10 +106,10 @@ func credocfil(inpfilnam string)(err error) {
 
 	//type definitions
 
-	outfil.WriteString("# Types\n\n")
+	outfil.WriteString("# Types\n")
 
 
-	outfil.WriteString("# Functions\n\n")
+	outfil.WriteString("\n# Functions\n")
 	linSt = 0
 	ilin = 1
 	for i:=0; i< nb; i++ {
@@ -123,7 +123,7 @@ func credocfil(inpfilnam string)(err error) {
 			linSt = i+1
 		}
 	}
-	outfil.WriteString("# Methods\n\n")
+	outfil.WriteString("\n# Methods\n")
 
 	return nil
 }
@@ -138,10 +138,22 @@ func Isfunc(buf []byte)(fnam string, res bool) {
 	if buf[3] != 'c' {return "", false}
 	if buf[4] != ' ' {return "", false}
 
+	fnamSt := 0
 	for i:= 5; i<len(buf); i++ {
-		if utilLib.IsAlpha(buf[i]) {continue}
-//		if buf[i]
+		if buf[i] == ' ' {continue}
+		if buf[i] == '(' {return "", false}
+		if utilLib.IsAlpha(buf[i]) {
+			fnamSt = i
+			break
+		}
 	}
-	fnam = "xyz"
+	fnamEnd := 0
+	for i:= fnamSt; i<len(buf); i++ {
+		if (buf[i] == ' ') || (buf[i] == '(') {
+			fnamEnd = i
+			break
+		}
+	}
+	fnam = string(buf[fnamSt:fnamEnd])
 	return fnam, true
 }
