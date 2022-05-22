@@ -45,11 +45,14 @@ func credocfil(inpfilnam string)(err error) {
 // function that creates doc output file
 
 	var outfilnam string
-	var buf [4096]byte
 	// check whether input file is valid
 	inpfil, err := os.Open(os.Args[1])
 	defer inpfil.Close()
 	if err != nil {return fmt.Errorf("os.Open: %v\n", err)}
+
+	inpfilInfo,_ := inpfil.Stat()
+	inpSize := inpfilInfo.Size()
+	fmt.Printf("input file size: %d\n", inpSize)
 
 	// create output file name
 //	found := false
@@ -72,35 +75,31 @@ func credocfil(inpfilnam string)(err error) {
 
 	outfil.WriteString(prefix + outfilnam + suffix)
 
-	bufp := buf[:]
+	bufp := make([]byte, inpSize)
 
 	linSt := 0
 	ilin := 1
-	for iblock :=0; iblock < 10; iblock++ {
-		offset := int64(iblock * 4096)
-		nb, _ := inpfil.ReadAt(bufp, offset)
+//	for iblock :=0; iblock < 10; iblock++ {
+	nb, _ := inpfil.Read(bufp)
 //		if err != nil {return fmt.Errorf("read: %d %v", nb, err)}
-		introlin := 0
-		for i:=0; i< nb; i++ {
-			if bufp[i] == '\n' {
-				linEnd := i
-				fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
+	introlin := 0
+	for i:=0; i< nb; i++ {
+		if bufp[i] == '\n' {
+			linEnd := i
+			fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
 //				fmt.Println("start: ", string(bufp[linSt:linSt+1]))
-				if (bufp[linSt] == '/') && (bufp[linSt+1] == '/') {
-					outfil.WriteString("  " + string(bufp[linSt+2: linEnd]) + "   \n")
-					introlin = ilin
-				}
-				if (introlin >0) && (introlin < ilin) {
-					outfil.WriteString("/n/n")
-					break
-				}
-				ilin++
-				linSt = i+1
+			if (bufp[linSt] == '/') && (bufp[linSt+1] == '/') {
+				outfil.WriteString("  " + string(bufp[linSt+2: linEnd]) + "   \n")
+				introlin = ilin
 			}
+			if (introlin >0) && (introlin < ilin) {
+				outfil.WriteString("\n\n")
+				break
+			}
+			ilin++
+			linSt = i+1
 		}
-		if nb < 4096 {break}
 	}
-
 
 	return nil
 }
