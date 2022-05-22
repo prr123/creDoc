@@ -117,7 +117,8 @@ func credocfil(inpfilnam string)(err error) {
 			linEnd := i
 			fnam, res := IsFunc(bufp[linSt: linEnd])
 			if res {
-				outfil.WriteString(fnam+"\n")
+				outfil.WriteString("## " + fnam + "    \n")
+				outfil.WriteString(string(bufp[linSt: linEnd-1]) + "    \n\n")
 			}
 			ilin++
 			linSt = i+1
