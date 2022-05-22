@@ -115,7 +115,7 @@ func credocfil(inpfilnam string)(err error) {
 	for i:=0; i< nb; i++ {
 		if bufp[i] == '\n' {
 			linEnd := i
-			fnam, res := Isfunc(bufp[linSt: linEnd])
+			fnam, res := IsFunc(bufp[linSt: linEnd])
 			if res {
 				outfil.WriteString(fnam+"\n")
 			}
@@ -128,7 +128,7 @@ func credocfil(inpfilnam string)(err error) {
 	return nil
 }
 
-func Isfunc(buf []byte)(fnam string, res bool) {
+func IsFunc(buf []byte)(fnam string, res bool) {
 
 	if len(buf) < 5 { return "", false }
 
@@ -147,6 +147,9 @@ func Isfunc(buf []byte)(fnam string, res bool) {
 			break
 		}
 	}
+
+	if fnamSt == 0 {return "", false}
+
 	fnamEnd := 0
 	for i:= fnamSt; i<len(buf); i++ {
 		if (buf[i] == ' ') || (buf[i] == '(') {
@@ -154,6 +157,67 @@ func Isfunc(buf []byte)(fnam string, res bool) {
 			break
 		}
 	}
+
+	if fnamEnd == 0 {return "", false}
+
 	fnam = string(buf[fnamSt:fnamEnd])
 	return fnam, true
+}
+
+func IsMethod(buf []byte)(methNam string, typNam string, res bool) {
+
+	if len(buf) < 5 { return "","", false }
+
+	if buf[0] != 'f' {return "", "", false}
+	if buf[1] != 'u' {return "", "", false}
+	if buf[2] != 'n' {return "", "", false}
+	if buf[3] != 'c' {return "", "", false}
+	if buf[4] != ' ' {return "", "", false}
+
+	typSt := 0
+	for i:= 5; i<len(buf); i++ {
+		if buf[i] == ' ' {continue}
+		if utilLib.IsAlpha(buf[i]) {return "", "", false}
+		if buf[i] == '(' {
+			typSt = i
+			break
+		}
+	}
+
+	if typSt == 0 {return "", "", false}
+
+	typEnd := 0
+	for i:= typSt; i<len(buf); i++ {
+		if buf[i] == ')' {
+			typEnd = i
+			break
+		}
+	}
+
+	if typEnd == 0 {return "", "", false}
+
+	typNam = string(buf[typSt+1:typEnd-1])
+	methSt := 0
+	for i:= typEnd + 1; i<len(buf); i++ {
+		if utilLib.IsAlpha(buf[i]) {
+			methSt = i
+			break
+		}
+	}
+
+	if methSt == 0 {return "", "", false}
+
+	methEnd := 0
+	for i:= methSt; i<len(buf); i++ {
+		if (buf[i] == ' ') || (buf[i] == '(') {
+			methEnd = i
+			break
+		}
+	}
+
+	if methEnd == 0 {return "", "", false}
+
+	methNam = string(buf[methSt:methEnd])
+
+	return methNam, typNam, true
 }
