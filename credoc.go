@@ -12,6 +12,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"credoc/util"
 )
 
 func main() {
@@ -78,13 +79,13 @@ func credocfil(inpfilnam string)(err error) {
 
 	bufp := make([]byte, inpSize)
 
-	linSt := 0
-	ilin := 1
 //	for iblock :=0; iblock < 10; iblock++ {
 	nb, _ := inpfil.Read(bufp)
 //		if err != nil {return fmt.Errorf("read: %d %v", nb, err)}
 
 	// top comments
+	linSt := 0
+	ilin := 1
 	introlin := 0
 	for i:=0; i< nb; i++ {
 		if bufp[i] == '\n' {
@@ -105,11 +106,42 @@ func credocfil(inpfilnam string)(err error) {
 
 	//type definitions
 
-	outfil.WriteString("+Types\n\n")
+	outfil.WriteString("# Types\n\n")
 
-	outfil.WriteString("+Functions\n\n")
 
-	outfil.WriteString("+Methods\n\n")
+	outfil.WriteString("# Functions\n\n")
+	linSt = 0
+	ilin = 1
+	for i:=0; i< nb; i++ {
+		if bufp[i] == '\n' {
+			linEnd := i
+			fnam, res := Isfunc(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString(fnam+"\n")
+			}
+			ilin++
+			linSt = i+1
+		}
+	}
+	outfil.WriteString("# Methods\n\n")
 
 	return nil
+}
+
+func Isfunc(buf []byte)(fnam string, res bool) {
+
+	if len(buf) < 5 { return "", false }
+
+	if buf[0] != 'f' {return "", false}
+	if buf[1] != 'u' {return "", false}
+	if buf[2] != 'n' {return "", false}
+	if buf[3] != 'c' {return "", false}
+	if buf[4] != ' ' {return "", false}
+
+	for i:= 5; i<len(buf); i++ {
+		if utilLib.IsAlpha(buf[i]) {continue}
+//		if buf[i]
+	}
+	fnam = "xyz"
+	return fnam, true
 }
