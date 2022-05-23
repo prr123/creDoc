@@ -6,9 +6,10 @@ The file description is expected to consist of comments before the package state
 Descriptions of types, functions and methods are expected to be comments after the definition.
 
 ## Installation
+download credoc.go and util/utilLib.go
 
-compile file:
-go build credoc.go
+compile file:     
+*go build credoc.go*
 
 add alias in .bashrc
 
