@@ -84,52 +84,195 @@ func credocfil(inpfilnam string)(err error) {
 //		if err != nil {return fmt.Errorf("read: %d %v", nb, err)}
 
 	// top comments
+	outfil.WriteString("# Description\n")
 	linSt := 0
 	ilin := 1
-	introlin := 0
+	endTop := 0
+	istate := 1
+	linEnd := 0
+	endTopLin := 1
 	for i:=0; i< nb; i++ {
-		if bufp[i] == '\n' {
-			linEnd := i
+		if bufp[i] != '\n' {continue}
+		ilin++
+		switch istate {
+		case 1:
+			linEnd = i
 //			fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
-			if (bufp[linSt] == '/') && (bufp[linSt+1] == '/') {
-				outfil.WriteString("  " + string(bufp[linSt+2: linEnd]) + "   \n")
-				introlin = ilin
+			desc, res := IsComment(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString("  " + desc + "   \n")
+				istate = 2
 			}
-			if (introlin >0) && (introlin < ilin) {
-				outfil.WriteString("\n\n")
-				break
-			}
-			ilin++
 			linSt = i+1
+		case 2:
+			linEnd = i
+//			fmt.Printf("line %d: %s\n", ilin, string(bufp[linSt:linEnd]))
+			desc, res := IsComment(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString("  " + desc + "   \n")
+				istate = 2
+				linSt = i+1
+				endTop = i
+				endTopLin = ilin
+			}
 		}
 	}
+
+	if endTop == 0 {
+		outfil.WriteString("no description!    \n")
+	}
+
+	outfil.WriteString("\n\n")
 
 	//type definitions
-
 	outfil.WriteString("# Types\n")
-
-
-	outfil.WriteString("\n# Functions\n")
+	istate = 1
+	linEnd = 0
+	ilin = endTopLin
 	linSt = 0
-	ilin = 1
-	for i:=0; i< nb; i++ {
-		if bufp[i] == '\n' {
-			linEnd := i
-			fnam, res := IsFunc(bufp[linSt: linEnd])
+	found := false
+//fmt.Println("nb: ", nb, " endTop: ", endTop)
+	for i:=endTop; i< nb; i++ {
+		if bufp[i] != '\n' {continue}
+		ilin++
+		linEnd = i
+		switch istate {
+		case 1:
+			typNam, res := IsTyp(bufp[linSt: linEnd])
 			if res {
-				outfil.WriteString("## " + fnam + "    \n")
+				outfil.WriteString("## " + typNam + "    \n")
 				outfil.WriteString(string(bufp[linSt: linEnd-1]) + "    \n\n")
+				istate = 2
+				found = true
 			}
-			ilin++
 			linSt = i+1
+		case 2:
+			desc, res := IsComment(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString(desc + "    \n")
+			}
+			linSt = i+1
+			if !res {istate = 1; break}
 		}
 	}
+
+	if !found {
+		outfil.WriteString("no types defined!    \n")
+	}
+
+	// function
+	outfil.WriteString("\n# Functions\n")
+	istate = 1
+	linEnd = 0
+	ilin = endTopLin
+	linSt = 0
+	found = false
+//fmt.Println("nb: ", nb, " endTop: ", endTop)
+	for i:=endTop; i< nb; i++ {
+		if bufp[i] != '\n' {continue}
+		ilin++
+		linEnd = i
+		switch istate {
+		case 1:
+			funcNam, res := IsFunc(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString("## " + funcNam + "    \n")
+				outfil.WriteString(string(bufp[linSt: linEnd-1]) + "    \n\n")
+				istate = 2
+				found = true
+			}
+			linSt = i+1
+		case 2:
+			desc, res := IsComment(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString(desc + "    \n")
+			}
+			linSt = i+1
+			if !res {istate = 1; break}
+		}
+	}
+
+	if !found {
+		outfil.WriteString("no functions defined!    \n")
+	}
+
+	// method
 	outfil.WriteString("\n# Methods\n")
+	istate = 1
+	linEnd = 0
+	ilin = endTopLin
+	linSt = 0
+	found = false
+	for i:=endTop; i< nb; i++ {
+		if bufp[i] != '\n' {continue}
+		ilin++
+		linEnd = i
+		switch istate {
+		case 1:
+			methNam, methTyp, res := IsMethod(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString("## " + methTyp +": " + methNam + "    \n")
+				outfil.WriteString(string(bufp[linSt: linEnd-1]) + "    \n\n")
+				istate = 2
+				found = true
+			}
+			linSt = i+1
+		case 2:
+			desc, res := IsComment(bufp[linSt: linEnd])
+			if res {
+				outfil.WriteString(desc + "    \n")
+			}
+			linSt = i+1
+			if !res {istate = 1; break}
+		}
+	}
+	if !found {
+		outfil.WriteString("no methods defined!    \n")
+	}
 
 	return nil
 }
 
-func IsFunc(buf []byte)(fnam string, res bool) {
+func IsTyp(buf []byte)(typNam string, res bool) {
+// function that checks whether an input line is a type definition.
+// It returns the type name if the input line is a typpe definition.
+
+	if len(buf) < 5 { return "", false }
+
+	if buf[0] != 't' {return "", false}
+	if buf[1] != 'y' {return "", false}
+	if buf[2] != 'p' {return "", false}
+	if buf[3] != 'e' {return "", false}
+	if buf[4] != ' ' {return "", false}
+
+	fnamSt := 0
+	for i:= 5; i<len(buf); i++ {
+		if buf[i] == ' ' {continue}
+		if utilLib.IsAlpha(buf[i]) {
+			fnamSt = i
+			break
+		}
+	}
+
+	if fnamSt == 0 {return "", false}
+
+	fnamEnd := 0
+	for i:= fnamSt; i<len(buf); i++ {
+		if (buf[i] == ' ') {
+			fnamEnd = i
+			break
+		}
+	}
+
+	if fnamEnd == 0 {return "", false}
+
+	typNam = string(buf[fnamSt:fnamEnd])
+	return typNam, true
+}
+
+func IsFunc(buf []byte)(funcNam string, res bool) {
+// function that checks whether an input line is a function.
+// It returns the function name if the input line is a  function.
 
 	if len(buf) < 5 { return "", false }
 
@@ -161,11 +304,13 @@ func IsFunc(buf []byte)(fnam string, res bool) {
 
 	if fnamEnd == 0 {return "", false}
 
-	fnam = string(buf[fnamSt:fnamEnd])
-	return fnam, true
+	funcNam = string(buf[fnamSt:fnamEnd])
+	return funcNam, true
 }
 
 func IsMethod(buf []byte)(methNam string, typNam string, res bool) {
+// function that detemines whether a input line is a  method.
+// if so, the function returns the method name and the name of the structure the method is associated with
 
 	if len(buf) < 5 { return "","", false }
 
@@ -221,4 +366,17 @@ func IsMethod(buf []byte)(methNam string, typNam string, res bool) {
 	methNam = string(buf[methSt:methEnd])
 
 	return methNam, typNam, true
+}
+
+func IsComment (buf []byte)(desc string, res bool) {
+// function that determines whether the input line is a comment line.
+// If so, it returns the comment in the desc.
+
+	if len(buf) < 2 {return "", false}
+	if buf[0] != '/' {return "", false}
+	if buf[1] != '/' {return "",  false}
+
+	desc = string(buf[2:])
+
+	return desc, true
 }
