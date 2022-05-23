@@ -7,7 +7,9 @@ Descriptions of types, functions and methods are expected to be comments after t
 
 ## Installation
 
-compile file 
+compile file:
+go build credoc.go
+
 add alias in .bashrc
 
 ## Description
